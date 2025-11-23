@@ -1,14 +1,7 @@
 // Teacher dashboard script
 (function(){
-  // Require Firebase Auth; redirect if not authenticated or not teacher
-  const auth = window.firebaseAuth;
+  // Defer using Firebase objects until they're ready to avoid initial flicker
   const db = window.firebaseDb;
-  
-  if (!auth) { 
-    console.error('[Teacher] Firebase Auth not available');
-    location.href = '/index.html'; 
-    return; 
-  }
 
   function setHeaderUser(emailOrName){
     const el = document.getElementById('teacherEmail');
@@ -77,10 +70,23 @@
     }
   });
 
+  // Ensure Firebase API shim is ready before calls
+  function waitForFirebaseApi(timeoutMs = 6000){
+    return new Promise((resolve)=>{
+      if (typeof window.firebaseApiCall === 'function') return resolve();
+      const t = setTimeout(()=>resolve(), timeoutMs);
+      const handler = ()=>{ clearTimeout(t); resolve(); };
+      window.addEventListener('firebaseApiReady', handler, { once: true });
+    });
+  }
+
   async function api(endpoint, options={}) {
     // Always route to Firebase shim; teacher role enforced by rules
     const method = (options && options.method) || 'GET';
     const body = (options && options.body) || null;
+    if (typeof window.firebaseApiCall !== 'function') {
+      await waitForFirebaseApi();
+    }
     return await window.firebaseApiCall(endpoint, method, body);
   }
 

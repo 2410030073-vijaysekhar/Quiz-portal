@@ -22,6 +22,70 @@ import {
 const db = window.firebaseDb || getFirestore(window.firebaseApp);
 const auth = window.firebaseAuth;
 
+// Minimal fallback dataset so the quiz works even if Firestore is empty
+// Note: read-only in-memory; does not write to Firestore. Intended as a fast safety net.
+const DEFAULT_QUIZ = {
+  quizId: 1,
+  subjects: [
+    { id: 1, name: 'DBMS', color: '#000000' },
+    { id: 2, name: 'FEDF', color: '#FF6B6B' },
+    { id: 3, name: 'OOP', color: '#4ECDC4' },
+    { id: 4, name: 'OS',  color: '#45B7D1' }
+  ],
+  questions: [
+    {
+      id: 1, subjectId: 1, orderNum: 1,
+      questionText: 'Which SQL command is used to remove a table and its data permanently?',
+      options: [
+        { id: 0, optionText: 'DELETE TABLE', isCorrect: false },
+        { id: 1, optionText: 'DROP TABLE',   isCorrect: true  },
+        { id: 2, optionText: 'TRUNCATE ROW', isCorrect: false },
+        { id: 3, optionText: 'REMOVE TABLE', isCorrect: false }
+      ]
+    },
+    {
+      id: 2, subjectId: 2, orderNum: 2,
+      questionText: 'Which HTML tag is semantic and represents independent content?',
+      options: [
+        { id: 0, optionText: '<div>',   isCorrect: false },
+        { id: 1, optionText: '<section>', isCorrect: true  },
+        { id: 2, optionText: '<span>',  isCorrect: false },
+        { id: 3, optionText: '<b>',     isCorrect: false }
+      ]
+    },
+    {
+      id: 3, subjectId: 3, orderNum: 3,
+      questionText: 'Which OOP concept allows using the same function name with different implementations?',
+      options: [
+        { id: 0, optionText: 'Encapsulation', isCorrect: false },
+        { id: 1, optionText: 'Inheritance',   isCorrect: false },
+        { id: 2, optionText: 'Polymorphism',  isCorrect: true  },
+        { id: 3, optionText: 'Abstraction',   isCorrect: false }
+      ]
+    },
+    {
+      id: 4, subjectId: 4, orderNum: 4,
+      questionText: 'Which scheduling algorithm picks the process with the shortest next CPU burst?',
+      options: [
+        { id: 0, optionText: 'FCFS',  isCorrect: false },
+        { id: 1, optionText: 'SJF',   isCorrect: true  },
+        { id: 2, optionText: 'RR',    isCorrect: false },
+        { id: 3, optionText: 'EDF',   isCorrect: false }
+      ]
+    },
+    {
+      id: 5, subjectId: 1, orderNum: 5,
+      questionText: 'Which normal form removes partial dependency on a candidate key?',
+      options: [
+        { id: 0, optionText: '1NF', isCorrect: false },
+        { id: 1, optionText: '2NF', isCorrect: true  },
+        { id: 2, optionText: '3NF', isCorrect: false },
+        { id: 3, optionText: 'BCNF', isCorrect: false }
+      ]
+    }
+  ]
+};
+
 function requireAuth() {
   if (!auth || !auth.currentUser) {
     throw new Error('Not authenticated');
@@ -68,14 +132,31 @@ async function getQuizQuestions(quizId) {
   await ensureQuiz(quizId);
   const qRef = collection(db, 'quizzes', String(quizId), 'questions');
   const qSnap = await getDocs(query(qRef, orderBy('orderNum')));
-  return qSnap.docs.map(d => ({ id: parseInt(d.id,10)||d.id, ...d.data() }));
+  const items = qSnap.docs.map(d => ({ id: parseInt(d.id,10)||d.id, ...d.data() }));
+  if (items.length === 0 && quizId === DEFAULT_QUIZ.quizId) {
+    // Fallback to built-in questions (read-only)
+    return DEFAULT_QUIZ.questions.map(q => ({
+      id: q.id,
+      subjectId: q.subjectId,
+      orderNum: q.orderNum,
+      questionText: q.questionText
+    }));
+  }
+  return items;
 }
 
 // Fetch options for a question
 async function getQuestionOptions(quizId, questionId) {
   const oRef = collection(db, 'quizzes', String(quizId), 'questions', String(questionId), 'options');
   const oSnap = await getDocs(query(oRef, orderBy('index')));
-  return oSnap.docs.map(d => ({ id: parseInt(d.id,10)||d.id, ...d.data() }));
+  const items = oSnap.docs.map(d => ({ id: parseInt(d.id,10)||d.id, ...d.data() }));
+  if (items.length === 0 && quizId === DEFAULT_QUIZ.quizId) {
+    const q = DEFAULT_QUIZ.questions.find(x => String(x.id) === String(questionId));
+    if (q) {
+      return q.options.map((o, idx) => ({ id: o.id ?? idx, optionText: o.optionText, is_correct: !!o.isCorrect, index: idx }));
+    }
+  }
+  return items;
 }
 
 // Create or update user
