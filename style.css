@@ -2,7 +2,13 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+}
+
+/* Add padding only for quiz page, not auth pages */
+body:not(.auth-page) .container,
+body:not(.auth-page) .heading {
+    margin: 20px;
 }
 
 /* Color customization variables for question navigation numbers */
@@ -876,13 +882,18 @@ button:disabled {
     width: 100vw;            /* span full viewport width */
     max-width: 100vw;        /* prevent constraining */
     min-height: 100vh;       /* fill height */
+    height: 100vh;           /* fixed height */
     margin: 0;               /* no centering margins */
+    padding: 0;              /* no padding */
     display: grid;
     grid-template-columns: 70% 30%; /* image : login (better balance) */
     gap: 0;
     border-radius: 0;        /* edges flush with viewport */
     overflow: hidden;
     box-shadow: none;        /* remove outer shadow when full-bleed */
+    position: fixed;         /* fix to viewport */
+    top: 0;
+    left: 0;
 }
 
 .auth-visual-side {
@@ -905,29 +916,32 @@ button:disabled {
     content: "";
     position: absolute;
     inset: 0;
-    background: radial-gradient(60% 60% at 50% 40%, rgba(0, 224, 255, 0.12), transparent 60%),
-                linear-gradient(180deg, rgba(8, 23, 35, 0.2), rgba(8, 23, 35, 0.6));
+    background: radial-gradient(60% 60% at 50% 40%, rgba(0, 224, 255, 0.08), transparent 60%),
+                linear-gradient(180deg, rgba(8, 23, 35, 0.5), rgba(8, 23, 35, 0.7));
     pointer-events: none;
 }
 .auth-visual-badge {
     position: relative;
-    z-index: 1;
-    color: #b9f3ff;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(185, 243, 255, 0.25);
+    z-index: 2;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.65);
+    border: 2px solid rgba(255, 255, 255, 0.35);
     border-radius: 12px;
-    padding: 10px 14px;
+    padding: 12px 18px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    backdrop-filter: blur(6px);
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    backdrop-filter: blur(8px);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .auth-form-side {
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* push card to the right edge */
+    justify-content: center;
     background: linear-gradient(180deg, #0f172a 0%, #0b1222 100%);
-    padding: clamp(16px, 2vw, 24px) 0 clamp(16px, 2vw, 24px) clamp(16px, 2vw, 24px);
+    padding: 20px;
+    overflow-y: auto;
 }
 
 /* Make existing card sit nicely in the right side */

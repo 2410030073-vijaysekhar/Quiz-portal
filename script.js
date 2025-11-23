@@ -755,6 +755,7 @@ document.addEventListener("DOMContentLoaded", function () {
             padding: 0; /* full-bleed layout for 75/25 split */
         `;
 
+        document.body.classList.add('auth-page');
         document.body.appendChild(loginDiv);
 
         // Add event listeners
@@ -767,6 +768,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (loginPage) {
             loginPage.remove();
         }
+        document.body.classList.remove('auth-page');
     }
 
     // Setup authentication event listeners
